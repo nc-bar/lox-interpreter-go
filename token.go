@@ -1,6 +1,6 @@
 package main
 
-//tokens
+// tokens
 const (
 	LeftParen = iota
 	RightParen
@@ -42,6 +42,25 @@ const (
 	While
 	Eof
 )
+
+var keywords = map[string]Token{
+	"and":    {Type: And, Lexeme: "and"},
+	"class":  {Type: Class, Lexeme: "class"},
+	"else":   {Type: Else, Lexeme: "else"},
+	"false":  {Type: False, Lexeme: "false"},
+	"for":    {Type: For, Lexeme: "for"},
+	"fun":    {Type: Fun, Lexeme: "fun"},
+	"if":     {Type: If, Lexeme: "if"},
+	"nil":    {Type: Nil, Lexeme: "nil"},
+	"or":     {Type: Or, Lexeme: "or"},
+	"print":  {Type: Print, Lexeme: "print"},
+	"return": {Type: Return, Lexeme: "return"},
+	"super":  {Type: Super, Lexeme: "super"},
+	"this":   {Type: This, Lexeme: "this"},
+	"true":   {Type: True, Lexeme: "true"},
+	"var":    {Type: Var, Lexeme: "var"},
+	"while":  {Type: While, Lexeme: "while"},
+}
 
 type Token struct {
 	Type   int

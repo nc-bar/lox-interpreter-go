@@ -195,10 +195,13 @@ func (s *Scanner) scanIdentifier() (Token, error) {
 	for s.index < len(s.source) && isAlphanumeric(string(s.source[s.index])) {
 		s.index++
 	}
+	y = s.index
 	if s.index >= len(s.source) {
 		y = s.index - 1
-	} else {
-		y = s.index
 	}
-	return NewToken(Identifier, string(s.source[x:y])), nil
+	t, ok := keywords[string(s.source[x:y])]
+	if !ok {
+		return NewToken(Identifier, string(s.source[x:y])), nil
+	}
+	return t, nil
 }
