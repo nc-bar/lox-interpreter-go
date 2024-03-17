@@ -69,7 +69,7 @@ func Scan(source []byte) ([]Token, error) {
 		}
 
 		c := string(source[i])
-		switch string(c) {
+		switch c {
 		case " ":
 			i++
 			continue
