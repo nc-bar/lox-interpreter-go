@@ -1,3 +1,3 @@
-module lox-go
+module lox-interpreter-go
 
-go 1.18
+go 1.22.1
