@@ -12,7 +12,7 @@
 ==
 /
 1234567890
- this is a comment
+//this is a comment
 (( )){} // grouping stuff
 !*+-/=<> <= == // operators
 "string!!!"
