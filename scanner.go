@@ -18,60 +18,51 @@ func isDigit(c string) bool {
 	return regexp.MustCompile(`^[0-9]*$`).MatchString(c)
 }
 
-func next(source []byte, i int, c string) bool {
-	if i >= len(source) {
-		return false
-	}
-	return c == string(source[i])
+type Scanner struct {
+	source []byte
+	index  int
 }
 
-func scanNumber(source []byte, i int) (Token, error) {
-	x := i
-	if isDigit(string(source[i])) {
-		for i < len(source) && isDigit(string(source[i])) {
-			i++
-		}
-		if i < len(source) {
-			if next(source, i, ".") {
-				i++
-				for i < len(source) && isDigit(string(source[i])) {
-					i++
-				}
-				if i >= len(source) {
-					t := NewToken(Number, string(source[x:i]))
-					return t, nil
-				}
-				if !next(source, i, " ") && !next(source, i, "\n") {
-					return NewToken(Number, ""), errors.New("scanNumber: incorrect number format")
-				}
-			}
-		}
-		t := NewToken(Number, string(source[x:i]))
-		return t, nil
-	}
-	return NewToken(Number, ""), errors.New("scanNumber: character is not a digit")
+func NewScanner(source []byte) Scanner {
+	return Scanner{source, 0}
 }
 
-func scanIdentifier(source []byte, i int) (Token, error) {
-	x := i
-	for i < len(source) && isAlphanumeric(string(source[i])) {
-		i++
-	}
-	return NewToken(Identifier, string(source[x:i])), nil
+func (s *Scanner) Consume() {
+	s.index++
 }
 
-func Scan(source []byte) ([]Token, error) {
+func (s *Scanner) Peek() byte {
+	if s.index < len(s.source) {
+		return s.source[s.index]
+	}
+	return 0 //eof
+}
+
+func (s *Scanner) Peek2() byte {
+	if s.index+1 < len(s.source) {
+		return s.source[s.index+1]
+	}
+	return 0 //eof
+}
+
+func (s *Scanner) Match(c byte) bool {
+	if s.index < len(s.source) {
+		return s.source[s.index] == c
+	}
+	return false //eof
+}
+
+func (s *Scanner) Scan() ([]Token, error) {
 	tokens := []Token{}
-	i := 0
 	for {
-		if i >= len(source) {
+		if s.index >= len(s.source) {
 			break
 		}
 
-		c := string(source[i])
+		c := string(s.source[s.index])
 		switch c {
 		case " ":
-			i++
+			s.index++
 			continue
 		case "(":
 			tokens = append(tokens, NewToken(LeftParen, "("))
@@ -94,76 +85,120 @@ func Scan(source []byte) ([]Token, error) {
 		case "*":
 			tokens = append(tokens, NewToken(Star, "*"))
 		case "!":
-			if next(source, i+1, "=") {
+			if next(s.source, s.index+1, "=") {
 				tokens = append(tokens, NewToken(BangEqual, "!="))
-				i++
+				s.index++
 			} else {
 				tokens = append(tokens, NewToken(Bang, "!"))
 			}
 		case "=":
-			if next(source, i+1, "=") {
+			if next(s.source, s.index+1, "=") {
 				tokens = append(tokens, NewToken(EqualEqual, "=="))
-				i++
+				s.index++
 			} else {
 				tokens = append(tokens, NewToken(Equal, "="))
 			}
 		case "<":
-			if next(source, i+1, "=") {
+			if next(s.source, s.index+1, "=") {
 				tokens = append(tokens, NewToken(LessEqual, "<="))
-				i++
+				s.index++
 			} else {
 				tokens = append(tokens, NewToken(Less, "<"))
 			}
 		case ">":
-			if next(source, i+1, "=") {
+			if next(s.source, s.index+1, "=") {
 				tokens = append(tokens, NewToken(GreaterEqual, ">="))
-				i++
+				s.index++
 			} else {
 				tokens = append(tokens, NewToken(Greater, ">"))
 			}
 		case "/":
-			if next(source, i+1, "/") {
-				for i < len(source) && !next(source, i+1, "\n") {
-					i++
+			if next(s.source, s.index+1, "/") {
+				for s.index < len(s.source) && !next(s.source, s.index+1, "\n") {
+					s.index++
 				}
 			} else {
 				tokens = append(tokens, NewToken(Slash, "/"))
 			}
 		case "\"":
-			j := i + 1
-			for i < len(source) && !next(source, i+1, "\"") {
-				i++
+			j := s.index + 1
+			for s.index < len(s.source) && !next(s.source, s.index+1, "\"") {
+				s.index++
 			}
 			t := NewToken(String, "")
-			t.Value = string(source[j : i+1]) // fix this off by one
+			t.Value = string(s.source[j : s.index+1]) // fix this off by one
 			tokens = append(tokens, t)
-			i++
+			s.index++
 		default:
 			if isDigit(c) {
-				t, err := scanNumber(source, i)
+				t, err := s.scanNumber()
 				if err != nil {
 					log.Fatal(err)
 				}
 				tokens = append(tokens, t)
-				// fix this, it's awful
-				i = i + len(t.Lexeme)
 				continue
 			}
 			if isAlpha(c) {
-				t, err := scanIdentifier(source, i)
+				t, err := s.scanIdentifier()
 				if err != nil {
 					log.Fatal(err)
 				}
-				// fix this, it's awful
 				tokens = append(tokens, t)
-				i = i + len(t.Lexeme)
 				continue
 			}
-			i++
+			s.index++
 			continue
 		}
-		i++
+		s.index++
 	}
 	tokens = append(tokens, NewToken(Eof, "EOF"))
 	return tokens, nil
+}
+
+func next(source []byte, i int, c string) bool {
+	if i >= len(source) {
+		return false
+	}
+	return c == string(source[i])
+}
+
+func (s *Scanner) scanNumber() (Token, error) {
+	if !isDigit(string(s.source[s.index])) {
+		return NewToken(Number, ""), errors.New("scanNumber: character is not a digit")
+	}
+	x := s.index
+	for s.index < len(s.source) && isDigit(string(s.source[s.index])) {
+		s.index++
+	}
+	if s.index < len(s.source) {
+		if next(s.source, s.index, ".") {
+			s.index++
+			for s.index < len(s.source) && isDigit(string(s.source[s.index])) {
+				s.index++
+			}
+			if s.index >= len(s.source) {
+				t := NewToken(Number, string(s.source[x:s.index]))
+				return t, nil
+			}
+			if !next(s.source, s.index, " ") && !next(s.source, s.index, "\n") {
+				return NewToken(Number, ""), errors.New("scanNumber: incorrect number format")
+			}
+		}
+	}
+	t := NewToken(Number, string(s.source[x:s.index]))
+	return t, nil
+}
+
+func (s *Scanner) scanIdentifier() (Token, error) {
+	var x, y int
+	x = s.index
+	for s.index < len(s.source) && isAlphanumeric(string(s.source[s.index])) {
+		s.index++
+	}
+	if s.index >= len(s.source) {
+		y = s.index - 1
+	} else {
+		y = s.index
+	}
+	return NewToken(Identifier, string(s.source[x:y])), nil
 }

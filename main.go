@@ -16,7 +16,9 @@ func main() {
 		return
 	}
 
-	tokens, err := Scan(source)
+	scanner := NewScanner(source)
+
+	tokens, err := scanner.Scan()
 	if err != nil {
 		fmt.Println(err)
 		return
