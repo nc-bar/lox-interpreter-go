@@ -3,34 +3,19 @@ package main
 import (
 	"errors"
 	"log"
+	"regexp"
 )
 
+func isAlpha(c string) bool {
+	return regexp.MustCompile(`^[_a-zA-Z]*$`).MatchString(c)
+}
+
+func isAlphanumeric(c string) bool {
+	return regexp.MustCompile(`^[_a-zA-Z0-9]*$`).MatchString(c)
+}
+
 func isDigit(c string) bool {
-	// improve this, it's awful
-	switch c {
-	case "0":
-		return true
-	case "1":
-		return true
-	case "2":
-		return true
-	case "3":
-		return true
-	case "4":
-		return true
-	case "5":
-		return true
-	case "6":
-		return true
-	case "7":
-		return true
-	case "8":
-		return true
-	case "9":
-		return true
-	default:
-		return false
-	}
+	return regexp.MustCompile(`^[0-9]*$`).MatchString(c)
 }
 
 func next(source []byte, i int, c string) bool {
@@ -65,6 +50,14 @@ func scanNumber(source []byte, i int) (Token, error) {
 		return t, nil
 	}
 	return NewToken(Number, ""), errors.New("scanNumber: character is not a digit")
+}
+
+func scanIdentifier(source []byte, i int) (Token, error) {
+	x := i
+	for i < len(source) && isAlphanumeric(string(source[i])) {
+		i++
+	}
+	return NewToken(Identifier, string(source[x:i])), nil
 }
 
 func Scan(source []byte) ([]Token, error) {
@@ -153,6 +146,16 @@ func Scan(source []byte) ([]Token, error) {
 				}
 				tokens = append(tokens, t)
 				// fix this, it's awful
+				i = i + len(t.Lexeme)
+				continue
+			}
+			if isAlpha(c) {
+				t, err := scanIdentifier(source, i)
+				if err != nil {
+					log.Fatal(err)
+				}
+				// fix this, it's awful
+				tokens = append(tokens, t)
 				i = i + len(t.Lexeme)
 				continue
 			}

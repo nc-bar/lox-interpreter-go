@@ -12,7 +12,7 @@
 ==
 /
 1234567890
- this is a comment
+// this is a comment
 (( )){} // grouping stuff
 !*+-/=<> <= == // operators
 "string!!!"
@@ -23,3 +23,14 @@
 1.2
 1
 2.0
+_var
+var
+var1
+var var
+_var
+var
+var1
+var var
+var1234
+dfasd_asdfa_dsf
+asdf_23_asd34

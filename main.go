@@ -22,5 +22,7 @@ func main() {
 		return
 	}
 
-	fmt.Println(tokens)
+	for _, t := range tokens {
+		fmt.Println(t)
+	}
 }
