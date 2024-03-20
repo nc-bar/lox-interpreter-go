@@ -45,9 +45,16 @@ func (s *Scanner) Peek2() byte {
 	return 0 //eof
 }
 
-func (s *Scanner) Match(c byte) bool {
+func (s *Scanner) Match(c string) bool {
 	if s.index < len(s.source) {
-		return s.source[s.index] == c
+		return string(s.source[s.index]) == c
+	}
+	return false //eof
+}
+
+func (s *Scanner) MatchNext(c string) bool {
+	if s.index+1 < len(s.source) {
+		return string(s.source[s.index+1]) == c
 	}
 	return false //eof
 }
@@ -55,14 +62,13 @@ func (s *Scanner) Match(c byte) bool {
 func (s *Scanner) Scan() ([]Token, error) {
 	tokens := []Token{}
 	for {
-		if s.index >= len(s.source) {
+		if s.Peek() == 0 {
 			break
 		}
-
-		c := string(s.source[s.index])
+		c := string(s.Peek())
 		switch c {
 		case " ":
-			s.index++
+			s.Consume()
 			continue
 		case "(":
 			tokens = append(tokens, NewToken(LeftParen, "("))
@@ -85,50 +91,50 @@ func (s *Scanner) Scan() ([]Token, error) {
 		case "*":
 			tokens = append(tokens, NewToken(Star, "*"))
 		case "!":
-			if next(s.source, s.index+1, "=") {
+			if s.MatchNext("=") {
 				tokens = append(tokens, NewToken(BangEqual, "!="))
-				s.index++
+				s.Consume()
 			} else {
 				tokens = append(tokens, NewToken(Bang, "!"))
 			}
 		case "=":
-			if next(s.source, s.index+1, "=") {
+			if s.MatchNext("=") {
 				tokens = append(tokens, NewToken(EqualEqual, "=="))
-				s.index++
+				s.Consume()
 			} else {
 				tokens = append(tokens, NewToken(Equal, "="))
 			}
 		case "<":
-			if next(s.source, s.index+1, "=") {
+			if s.MatchNext("=") {
 				tokens = append(tokens, NewToken(LessEqual, "<="))
-				s.index++
+				s.Consume()
 			} else {
 				tokens = append(tokens, NewToken(Less, "<"))
 			}
 		case ">":
-			if next(s.source, s.index+1, "=") {
+			if s.MatchNext("=") {
 				tokens = append(tokens, NewToken(GreaterEqual, ">="))
-				s.index++
+				s.Consume()
 			} else {
 				tokens = append(tokens, NewToken(Greater, ">"))
 			}
 		case "/":
-			if next(s.source, s.index+1, "/") {
-				for s.index < len(s.source) && !next(s.source, s.index+1, "\n") {
-					s.index++
+			if s.MatchNext("/") {
+				for !s.MatchNext("\n") {
+					s.Consume()
 				}
 			} else {
 				tokens = append(tokens, NewToken(Slash, "/"))
 			}
 		case "\"":
 			j := s.index + 1
-			for s.index < len(s.source) && !next(s.source, s.index+1, "\"") {
-				s.index++
+			for !s.MatchNext("\"") {
+				s.Consume()
 			}
 			t := NewToken(String, "")
 			t.Value = string(s.source[j : s.index+1]) // fix this off by one
 			tokens = append(tokens, t)
-			s.index++
+			s.Consume()
 		default:
 			if isDigit(c) {
 				t, err := s.scanNumber()
@@ -146,20 +152,13 @@ func (s *Scanner) Scan() ([]Token, error) {
 				tokens = append(tokens, t)
 				continue
 			}
-			s.index++
+			s.Consume()
 			continue
 		}
-		s.index++
+		s.Consume()
 	}
 	tokens = append(tokens, NewToken(Eof, "EOF"))
 	return tokens, nil
-}
-
-func next(source []byte, i int, c string) bool {
-	if i >= len(source) {
-		return false
-	}
-	return c == string(source[i])
 }
 
 func (s *Scanner) scanNumber() (Token, error) {
@@ -168,19 +167,19 @@ func (s *Scanner) scanNumber() (Token, error) {
 	}
 	x := s.index
 	for s.index < len(s.source) && isDigit(string(s.source[s.index])) {
-		s.index++
+		s.Consume()
 	}
 	if s.index < len(s.source) {
-		if next(s.source, s.index, ".") {
-			s.index++
+		if s.Match(".") {
+			s.Consume()
 			for s.index < len(s.source) && isDigit(string(s.source[s.index])) {
-				s.index++
+				s.Consume()
 			}
 			if s.index >= len(s.source) {
 				t := NewToken(Number, string(s.source[x:s.index]))
 				return t, nil
 			}
-			if !next(s.source, s.index, " ") && !next(s.source, s.index, "\n") {
+			if !s.Match(" ") && !s.Match("\n") {
 				return NewToken(Number, ""), errors.New("scanNumber: incorrect number format")
 			}
 		}
@@ -193,7 +192,7 @@ func (s *Scanner) scanIdentifier() (Token, error) {
 	var x, y int
 	x = s.index
 	for s.index < len(s.source) && isAlphanumeric(string(s.source[s.index])) {
-		s.index++
+		s.Consume()
 	}
 	y = s.index
 	if s.index >= len(s.source) {
