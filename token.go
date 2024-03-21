@@ -65,9 +65,8 @@ var keywords = map[string]Token{
 type Token struct {
 	Type   int
 	Lexeme string
-	Value  any
 }
 
 func NewToken(tokenType int, lexeme string) Token {
-	return Token{tokenType, lexeme, nil}
+	return Token{tokenType, lexeme}
 }
