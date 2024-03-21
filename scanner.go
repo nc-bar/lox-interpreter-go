@@ -158,26 +158,24 @@ func (s *Scanner) Scan() ([]Token, error) {
 }
 
 func (s *Scanner) scanNumber() (Token, error) {
-	if !isDigit(s.source[s.index]) {
+	if !isDigit(s.Peek()) {
 		return NewToken(Number, ""), errors.New("scanNumber: character is not a digit")
 	}
 	x := s.index
-	for isDigit(s.source[s.index]) {
+	for isDigit(s.Peek()) {
 		s.Consume()
 	}
-	if s.index < len(s.source) {
-		if s.Match(".") {
+	if s.Match(".") {
+		s.Consume()
+		for isDigit(s.Peek()) {
 			s.Consume()
-			for isDigit(s.Peek()) {
-				s.Consume()
-			}
-			if s.index >= len(s.source) {
-				t := NewToken(Number, string(s.source[x:s.index]))
-				return t, nil
-			}
-			if !s.Match(" ") && !s.Match("\n") {
-				return NewToken(Number, ""), errors.New("scanNumber: incorrect number format")
-			}
+		}
+		if s.index >= len(s.source) {
+			t := NewToken(Number, string(s.source[x:s.index]))
+			return t, nil
+		}
+		if !s.Match(" ") && !s.Match("\n") {
+			return NewToken(Number, ""), errors.New("scanNumber: incorrect number format")
 		}
 	}
 	t := NewToken(Number, string(s.source[x:s.index]))
