@@ -38,13 +38,6 @@ func (s *Scanner) Peek() byte {
 	return 0 //eof
 }
 
-func (s *Scanner) Peek2() byte {
-	if s.index+1 < len(s.source) {
-		return s.source[s.index+1]
-	}
-	return 0 //eof
-}
-
 func (s *Scanner) Match(c string) bool {
 	if s.index < len(s.source) {
 		return string(s.source[s.index]) == c
