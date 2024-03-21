@@ -49,14 +49,14 @@ func (s *Scanner) Match(c string) bool {
 	if s.index < len(s.source) {
 		return string(s.source[s.index]) == c
 	}
-	return false //eof
+	return false
 }
 
 func (s *Scanner) MatchNext(c string) bool {
 	if s.index+1 < len(s.source) {
 		return string(s.source[s.index+1]) == c
 	}
-	return false //eof
+	return false
 }
 
 func (s *Scanner) Scan() ([]Token, error) {
@@ -166,13 +166,13 @@ func (s *Scanner) scanNumber() (Token, error) {
 		return NewToken(Number, ""), errors.New("scanNumber: character is not a digit")
 	}
 	x := s.index
-	for s.index < len(s.source) && isDigit(s.source[s.index]) {
+	for isDigit(s.source[s.index]) {
 		s.Consume()
 	}
 	if s.index < len(s.source) {
 		if s.Match(".") {
 			s.Consume()
-			for s.index < len(s.source) && isDigit(s.source[s.index]) {
+			for isDigit(s.Peek()) {
 				s.Consume()
 			}
 			if s.index >= len(s.source) {
@@ -191,7 +191,7 @@ func (s *Scanner) scanNumber() (Token, error) {
 func (s *Scanner) scanIdentifier() (Token, error) {
 	var x, y int
 	x = s.index
-	for s.index < len(s.source) && isAlphanumeric(s.source[s.index]) {
+	for isAlphanumeric(s.Peek()) {
 		s.Consume()
 	}
 	y = s.index
