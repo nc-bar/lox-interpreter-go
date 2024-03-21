@@ -121,11 +121,14 @@ func (s *Scanner) Scan() ([]Token, error) {
 			}
 		case '"':
 			j := s.index + 1
-			for !s.MatchNext("\"") {
+			s.Consume()
+			for !s.Match("\"") {
 				s.Consume()
 			}
-			t := NewToken(String, "")
-			t.Value = string(s.source[j : s.index+1]) // fix this off by one
+			if s.Peek() == 0 {
+				log.Fatal("scan: case \": string does not end")
+			}
+			t := NewToken(String, string(s.source[j:s.index]))
 			tokens = append(tokens, t)
 			s.Consume()
 		default:
