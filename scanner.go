@@ -191,9 +191,6 @@ func (s *Scanner) scanIdentifier() (Token, error) {
 		s.Consume()
 	}
 	y = s.index
-	if s.index >= len(s.source) {
-		y = s.index - 1
-	}
 	t, ok := keywords[string(s.source[x:y])]
 	if !ok {
 		return NewToken(Identifier, string(s.source[x:y])), nil
