@@ -3,19 +3,19 @@ package main
 import (
 	"errors"
 	"log"
-	"regexp"
 )
 
-func isAlpha(c string) bool {
-	return regexp.MustCompile(`^[_a-zA-Z]*$`).MatchString(c)
+func isAlpha(c byte) bool {
+	return c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+
 }
 
-func isAlphanumeric(c string) bool {
-	return regexp.MustCompile(`^[_a-zA-Z0-9]*$`).MatchString(c)
+func isDigit(c byte) bool {
+	return c >= '0' && c <= '9'
 }
 
-func isDigit(c string) bool {
-	return regexp.MustCompile(`^[0-9]*$`).MatchString(c)
+func isAlphanumeric(c byte) bool {
+	return isAlpha(c) || isDigit(c)
 }
 
 type Scanner struct {
@@ -65,60 +65,60 @@ func (s *Scanner) Scan() ([]Token, error) {
 		if s.Peek() == 0 {
 			break
 		}
-		c := string(s.Peek())
+		c := s.Peek()
 		switch c {
-		case " ":
+		case ' ':
 			s.Consume()
 			continue
-		case "(":
+		case '(':
 			tokens = append(tokens, NewToken(LeftParen, "("))
-		case ")":
+		case ')':
 			tokens = append(tokens, NewToken(RightParen, ")"))
-		case "{":
+		case '{':
 			tokens = append(tokens, NewToken(LeftBrace, "{"))
-		case "}":
+		case '}':
 			tokens = append(tokens, NewToken(RightBrace, "}"))
-		case ",":
+		case ',':
 			tokens = append(tokens, NewToken(Comma, ","))
-		case ".":
+		case '.':
 			tokens = append(tokens, NewToken(Dot, "."))
-		case "-":
+		case '-':
 			tokens = append(tokens, NewToken(Minus, "-"))
-		case "+":
+		case '+':
 			tokens = append(tokens, NewToken(Plus, "+"))
-		case ";":
+		case ';':
 			tokens = append(tokens, NewToken(Semicolon, ";"))
-		case "*":
+		case '*':
 			tokens = append(tokens, NewToken(Star, "*"))
-		case "!":
+		case '!':
 			if s.MatchNext("=") {
 				tokens = append(tokens, NewToken(BangEqual, "!="))
 				s.Consume()
 			} else {
 				tokens = append(tokens, NewToken(Bang, "!"))
 			}
-		case "=":
+		case '=':
 			if s.MatchNext("=") {
 				tokens = append(tokens, NewToken(EqualEqual, "=="))
 				s.Consume()
 			} else {
 				tokens = append(tokens, NewToken(Equal, "="))
 			}
-		case "<":
+		case '<':
 			if s.MatchNext("=") {
 				tokens = append(tokens, NewToken(LessEqual, "<="))
 				s.Consume()
 			} else {
 				tokens = append(tokens, NewToken(Less, "<"))
 			}
-		case ">":
+		case '>':
 			if s.MatchNext("=") {
 				tokens = append(tokens, NewToken(GreaterEqual, ">="))
 				s.Consume()
 			} else {
 				tokens = append(tokens, NewToken(Greater, ">"))
 			}
-		case "/":
+		case '/':
 			if s.MatchNext("/") {
 				for !s.MatchNext("\n") {
 					s.Consume()
@@ -126,7 +126,7 @@ func (s *Scanner) Scan() ([]Token, error) {
 			} else {
 				tokens = append(tokens, NewToken(Slash, "/"))
 			}
-		case "\"":
+		case '"':
 			j := s.index + 1
 			for !s.MatchNext("\"") {
 				s.Consume()
@@ -162,17 +162,17 @@ func (s *Scanner) Scan() ([]Token, error) {
 }
 
 func (s *Scanner) scanNumber() (Token, error) {
-	if !isDigit(string(s.source[s.index])) {
+	if !isDigit(s.source[s.index]) {
 		return NewToken(Number, ""), errors.New("scanNumber: character is not a digit")
 	}
 	x := s.index
-	for s.index < len(s.source) && isDigit(string(s.source[s.index])) {
+	for s.index < len(s.source) && isDigit(s.source[s.index]) {
 		s.Consume()
 	}
 	if s.index < len(s.source) {
 		if s.Match(".") {
 			s.Consume()
-			for s.index < len(s.source) && isDigit(string(s.source[s.index])) {
+			for s.index < len(s.source) && isDigit(s.source[s.index]) {
 				s.Consume()
 			}
 			if s.index >= len(s.source) {
@@ -191,7 +191,7 @@ func (s *Scanner) scanNumber() (Token, error) {
 func (s *Scanner) scanIdentifier() (Token, error) {
 	var x, y int
 	x = s.index
-	for s.index < len(s.source) && isAlphanumeric(string(s.source[s.index])) {
+	for s.index < len(s.source) && isAlphanumeric(s.source[s.index]) {
 		s.Consume()
 	}
 	y = s.index
